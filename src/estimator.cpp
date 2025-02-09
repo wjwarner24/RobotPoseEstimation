@@ -13,23 +13,19 @@ EstimatorNode::EstimatorNode() : Node("estimator")
     m_timer = this->create_wall_timer(
         std::chrono::duration<double>(dt), std::bind(&EstimatorNode::timerCallback, this));
 
-    RCLCPP_INFO(this->get_logger(), "INIT");
+    RCLCPP_INFO(this->get_logger(), "EstimatorNode initialized");
 }
 
 // Update actuator feedback
 void EstimatorNode::actuatorFeedbackCallback(const sensor_msgs::msg::JointState::SharedPtr joint_state)
 {
-    RCLCPP_INFO(this->get_logger(), "START ACTUATOR CALLBACK");
     m_actuator_feedback = getInputVector(*joint_state);
-    RCLCPP_INFO(this->get_logger(), "END ACTUATOR CALLBACK");
 }
 
 // Update ground truth
 void EstimatorNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr odom)
 {
-    RCLCPP_INFO(this->get_logger(), "START ODOM CALLBACK");
     m_ground_truth = getStateVector(*odom);
-    RCLCPP_INFO(this->get_logger(), "END ODOM CALLBACK");
 }
 
 // Add a pose to trajectroies at every timer callback
@@ -39,20 +35,11 @@ void EstimatorNode::timerCallback()
     {
         return;
     }
-    RCLCPP_INFO(this->get_logger(), "START TIMER CALLBACK");
-    m_ground_truth_states.push_back(m_ground_truth);
-
-    RCLCPP_INFO(this->get_logger(), "TIMER CALLBACK 1");
-    Eigen::VectorXd estimated_pose = estimatePose();
     
-    RCLCPP_INFO(this->get_logger(), "TIMER CALLBACK 2");
-    RCLCPP_INFO(this->get_logger(), "Estimated Pose length: %ld", estimated_pose.size());
+    m_ground_truth_states.push_back(m_ground_truth);
+    Eigen::VectorXd estimated_pose = estimatePose();
     publishOdom(estimated_pose);
-
-    RCLCPP_INFO(this->get_logger(), "TIMER CALLBACK 3");
     m_estimated_states.push_back(estimated_pose);
-
-    RCLCPP_INFO(this->get_logger(), "END TIMER CALLBACK");
 }
 
 // Estimate the Vehicle State based off actuator feedback
@@ -80,17 +67,11 @@ Eigen::VectorXd EstimatorNode::estimatePose()
     double v_wheels = m_actuator_feedback(0);
     double phi = m_actuator_feedback(1);
 
-
     double v_instant = r * 0.5 * (v_wheels);
     double omega_instant = v_instant * tan(phi) / L;
 
-    RCLCPP_INFO(this->get_logger(), "GOT HERE");
-
     Eigen::VectorXd u(5);
     u.setZero();
-    // u(0) = 0;
-    // u(1) = 0;
-    // u(2) = 0;
     u(3) = v_instant - v;
     u(4) = omega_instant - omega;
 
@@ -113,14 +94,6 @@ Eigen::VectorXd EstimatorNode::getStateVector(nav_msgs::msg::Odometry odom)
 
 Eigen::VectorXd EstimatorNode::getInputVector(sensor_msgs::msg::JointState joint_state)
 {
-    // Eigen::VectorXd input(6);
-    // input(0) = joint_state.velocity[4]; // front left wheel
-    // input(1) = joint_state.velocity[3]; // front right wheel
-    // input(2) = joint_state.velocity[1]; // rear left wheel
-    // input(3) = joint_state.velocity[0]; // rear right wheel
-    // input(4) = joint_state.position[5]; // front steer
-    // input(5) = joint_state.position[2]; // rear steer
-
     Eigen::VectorXd input(2);
     input(0) = joint_state.velocity[0] + joint_state.velocity[1] * 0.5; // average angular velocity of back wheels in rad/sec
     input(1) = joint_state.position[5]; // front steer position in radians
@@ -216,3 +189,11 @@ int main(int argc, char **argv)
 // modifier(4) = (r / (2.0 * L)) * ((v1 + v2) * std::sin(phi_f) - (v3 + v4) * std::sin(phi_r));
 
 // RCLCPP_INFO(this->get_logger(), "Modifier: [%f, %f, %f, %f, %f]", modifier(0), modifier(1), modifier(2), modifier(3), modifier(4));
+
+// Eigen::VectorXd input(6);
+// input(0) = joint_state.velocity[4]; // front left wheel
+// input(1) = joint_state.velocity[3]; // front right wheel
+// input(2) = joint_state.velocity[1]; // rear left wheel
+// input(3) = joint_state.velocity[0]; // rear right wheel
+// input(4) = joint_state.position[5]; // front steer
+// input(5) = joint_state.position[2]; // rear steer
