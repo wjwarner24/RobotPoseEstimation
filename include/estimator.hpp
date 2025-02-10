@@ -75,8 +75,8 @@ private:
     Eigen::VectorXd m_actuator_feedback;
 
     // Vehicle params
-    double r = 0.05; // wheel radius in meters
-    double L = 0.4; // wheelbase in meters (distance between front and rear axles)
+    double r = 0.04; // wheel radius in meters
+    double L = 0.2; // wheelbase in meters (distance between front and rear axles)
 
     // time step
     double dt = 0.01;
