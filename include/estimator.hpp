@@ -58,7 +58,7 @@ public:
 
     void update(EKF &ekf, const Vector3d &z, const Matrix3d &R);
 
-    private :
+private:
 
     // Sub to actuator feedback
     rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr m_actuator_feedback_sub;
@@ -80,8 +80,8 @@ public:
     Eigen::Vector2d m_actuator_feedback;
 
     // Vehicle params
-    double r = 0.04; // wheel radius in meters
-    double L = 0.2; // wheelbase in meters (distance between front and rear axles)
+    double r = 0.05; // wheel radius in meters
+    double L = 0.4; // wheelbase in meters (distance between front and rear axles)
 
     // time step
     double dt = 0.01;

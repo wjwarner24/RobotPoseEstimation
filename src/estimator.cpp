@@ -41,7 +41,7 @@ void EstimatorNode::odomCallback(const nav_msgs::msg::Odometry::SharedPtr odom)
     m_ground_truth = getStateVector(*odom);
 }
 
-// Add a pose to trajectroies at every timer callback
+// Predict state update at every timer callback
 void EstimatorNode::timerCallback()
 {
     Vector2d u = m_actuator_feedback;
