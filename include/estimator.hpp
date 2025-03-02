@@ -13,17 +13,17 @@
 #include "tf2/LinearMath/Transform.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 #include "tf2/utils.h"
+#include <random>
 
-// struct VehicleState
-// {
-//     double x;
-//     double y;
-//     double theta;
-//     // double Vx;
-//     // double Vy;
-//     double v;
-//     double omega;
-// };
+
+using namespace Eigen;
+
+struct EKF {
+    Vector3d x; // State: [x, y, theta]
+    Matrix3d P; // State covariance
+    Matrix2d Q; // Process noise covariance
+    Matrix3d R; // Measurement noise covariance
+};
 
     
 class EstimatorNode : public rclcpp::Node
@@ -32,25 +32,31 @@ public:
         
     EstimatorNode();
 
-    //~EstimatorNode();
-
     void actuatorFeedbackCallback(const sensor_msgs::msg::JointState::SharedPtr joint_state);
 
     void odomCallback(const nav_msgs::msg::Odometry::SharedPtr odom);
 
     void timerCallback();
 
-    Eigen::VectorXd getStateVector(nav_msgs::msg::Odometry odom);
+    Vector3d getStateVector(nav_msgs::msg::Odometry odom);
 
-    Eigen::VectorXd getInputVector(sensor_msgs::msg::JointState joint_state);
+    Vector2d getInputVector(sensor_msgs::msg::JointState joint_state);
 
-    Eigen::VectorXd estimatePose();
-
-    void publishOdom(Eigen::VectorXd state);
+    void publishOdom(Vector3d state);
 
     double normalizeAngle(double angle);
 
-private:
+    Vector3d predictState(const Vector3d &x, const Vector2d &u, double dt);
+
+    Matrix3d computeJacobianF(const Vector3d &x, const Vector2d &u, double dt);
+
+    Matrix<double, 3, 2> computeJacobianB(const Vector3d &x, const Vector2d &u, double dt);
+
+    void predict(EKF &ekf, const Vector2d &u, double dt, const Matrix2d &Q);
+
+    void update(EKF &ekf, const Vector3d &z, const Matrix3d &R);
+
+    private :
 
     // Sub to actuator feedback
     rclcpp::Subscription<sensor_msgs::msg::JointState>::SharedPtr m_actuator_feedback_sub;
@@ -64,15 +70,9 @@ private:
     // Estimate Publisher
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr m_estimate_pub;
 
-    // Ground Truth States
-    std::vector<Eigen::VectorXd> m_ground_truth_states;
-
-    // Estimated States
-    std::vector<Eigen::VectorXd> m_estimated_states;
-
-    // Current GT odom
-    Eigen::VectorXd m_ground_truth;
-    Eigen::VectorXd m_actuator_feedback;
+    // Current measurements from sim
+    Eigen::Vector3d m_ground_truth;
+    Eigen::Vector2d m_actuator_feedback;
 
     // Vehicle params
     double r = 0.04; // wheel radius in meters
@@ -81,6 +81,12 @@ private:
     // time step
     double dt = 0.01;
 
+    // EKF
+    EKF ekf;
+
+    // Random number generator
+    static std::default_random_engine generator;
+    static std::normal_distribution<double> dist;
 };
 
 #endif
