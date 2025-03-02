@@ -20,6 +20,12 @@ add_executable(estimator src/estimator.cpp)
 # Link dependencies
 ament_target_dependencies(estimator rclcpp sensor_msgs nav_msgs tf2 tf2_ros tf2_geometry_msgs)
 
+
+add_executable(ukf src/ukf.cpp)
+
+# Link dependencies
+ament_target_dependencies(ukf rclcpp sensor_msgs nav_msgs tf2 tf2_ros tf2_geometry_msgs)
+
 # Ensure include directories are correctly set for this target
 target_include_directories(estimator PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -27,7 +33,7 @@ target_include_directories(estimator PUBLIC
 )
 
 # Install the executable
-install(TARGETS estimator
+install(TARGETS estimator ukf
   DESTINATION lib/${PROJECT_NAME}
 )
 
