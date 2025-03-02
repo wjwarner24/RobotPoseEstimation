@@ -44,6 +44,8 @@ public:
 
     void publishOdom(Vector3d state);
 
+    void publishNoisyOdom(Eigen::Vector3d state);
+
     double normalizeAngle(double angle);
 
     Vector3d predictState(const Vector3d &x, const Vector2d &u, double dt);
@@ -69,6 +71,9 @@ public:
 
     // Estimate Publisher
     rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr m_estimate_pub;
+
+    // Noisy ground truth publisher
+    rclcpp::Publisher<nav_msgs::msg::Odometry>::SharedPtr m_noisy_pub;
 
     // Current measurements from sim
     Eigen::Vector3d m_ground_truth;

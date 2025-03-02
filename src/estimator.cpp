@@ -15,6 +15,8 @@ EstimatorNode::EstimatorNode() : Node("estimator")
 
     m_estimate_pub = this->create_publisher<nav_msgs::msg::Odometry>("/estimate_odom", 10);
 
+    m_noisy_pub = this->create_publisher<nav_msgs::msg::Odometry>("/noisy_odom", 10);
+
     m_timer = this->create_wall_timer(
         std::chrono::duration<double>(dt), std::bind(&EstimatorNode::timerCallback, this));
 
@@ -76,6 +78,9 @@ Eigen::Vector3d EstimatorNode::getStateVector(nav_msgs::msg::Odometry odom)
     // Add the scaled noise to the state to simulate measurement noise (random walk)
     state += noiseScaled;
 
+    // Publish the noisy state
+    publishNoisyOdom(state);
+
     return state;
 }
 
@@ -115,6 +120,28 @@ void EstimatorNode::publishOdom(Eigen::Vector3d state)
     m_estimate_pub->publish(odom);
 }
 
+// Publishes an odom msg with the current estimate
+void EstimatorNode::publishNoisyOdom(Eigen::Vector3d state)
+{
+    nav_msgs::msg::Odometry odom;
+    odom.header.stamp = now();
+    odom.header.frame_id = "world";
+    odom.child_frame_id = "base_link";
+
+    odom.pose.pose.position.x = state(0);
+    odom.pose.pose.position.y = state(1);
+    odom.pose.pose.position.z = 0.0;
+
+    tf2::Quaternion q;
+    q.setRPY(0, 0, state(2));
+    odom.pose.pose.orientation.x = q.x();
+    odom.pose.pose.orientation.y = q.y();
+    odom.pose.pose.orientation.z = q.z();
+    odom.pose.pose.orientation.w = q.w();
+
+    m_noisy_pub->publish(odom);
+}
+
 // Normalizes an angle to be within [-pi, pi]
 double EstimatorNode::normalizeAngle(double angle)
 {
@@ -139,8 +166,8 @@ Vector3d EstimatorNode::predictState(const Vector3d &x, const Vector2d &u, doubl
     Vector3d x_pred;
     x_pred(0) = x(0) + v * cos(theta) * dt;
     x_pred(1) = x(1) + v * sin(theta) * dt;
-    // x_pred(2) = normalizeAngle(x(2) + w * dt);
-    x_pred(2) = x(2) + w * dt;
+    x_pred(2) = normalizeAngle(x(2) + w * dt);
+    //x_pred(2) = x(2) + w * dt;
     return x_pred;
 }
 
@@ -195,6 +222,7 @@ void EstimatorNode::update(EKF &ekf, const Vector3d &z, const Matrix3d &R)
 
     // Innovation or residual
     Vector3d y = z - ekf.x;
+    y(2) = normalizeAngle(z(2) - ekf.x(2));
 
     // Innovation covariance
     Matrix3d S = H * ekf.P * H.transpose() + R;
