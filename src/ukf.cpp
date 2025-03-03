@@ -92,7 +92,7 @@ Eigen::Vector3d UKFNode::getStateVector(nav_msgs::msg::Odometry odom)
 // There will be uncertainty that comes from whether these values are acheived
 Eigen::Vector2d UKFNode::getInputVector(sensor_msgs::msg::JointState joint_state)
 {
-    double a = joint_state.velocity[0] + joint_state.velocity[1] * 0.5; // average angular velocity of back wheels in rad/sec
+    double a = (joint_state.velocity[0] + joint_state.velocity[1]) * 0.5; // average angular velocity of back wheels in rad/sec
     double phi = joint_state.position[5];                               // front steer position in radians
 
     Eigen::Vector2d input;
