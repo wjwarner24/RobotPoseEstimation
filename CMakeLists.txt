@@ -32,6 +32,11 @@ add_executable(cf src/cf.cpp)
 # Link dependencies
 ament_target_dependencies(cf rclcpp sensor_msgs nav_msgs tf2 tf2_ros tf2_geometry_msgs)
 
+add_executable(ss src/state_space.cpp)
+
+# Link dependencies
+ament_target_dependencies(ss rclcpp sensor_msgs nav_msgs tf2 tf2_ros tf2_geometry_msgs)
+
 # Ensure include directories are correctly set for this target
 target_include_directories(estimator PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}/include
@@ -39,7 +44,7 @@ target_include_directories(estimator PUBLIC
 )
 
 # Install the executable
-install(TARGETS estimator ukf cf
+install(TARGETS estimator ukf cf ss
   DESTINATION lib/${PROJECT_NAME}
 )
 
